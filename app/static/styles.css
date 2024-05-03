@@ -1,0 +1,62 @@
+/* Основные цвета */
+body {
+    background-color: #fff; /* Белый */
+    color: #000; /* Черный */
+}
+
+/* Ссылки */
+a {
+    color: #f18e04; /* Оранжевый */
+}
+
+a:hover {
+    color: #f18e04; /* Оранжевый (темный) */
+}
+
+/* Заголовок */
+h1 {
+    color: #000; /* Черный */
+}
+
+/* Форма поиска */
+#searchInput {
+    border-color: #f18e04; /* Оранжевый */
+}
+
+/* Кнопки */
+.btn-primary {
+    background-color: #f18e04; /* Оранжевый */
+    border-color: #f18e04; /* Оранжевый */
+}
+
+.btn-primary:hover {
+    background-color: #ec971f; /* Оранжевый (темный) */
+    border-color: #ec971f; /* Оранжевый (темный) */
+}
+
+.btn-danger {
+    background-color: #d9534f; /* Красный */
+    border-color: #d9534f; /* Красный */
+}
+
+.btn-danger:hover {
+    background-color: #c9302c; /* Красный (темный) */
+    border-color: #c9302c; /* Красный (темный) */
+}
+
+/* Таблица */
+th,
+td {
+    border-color: #000; /* Черный */
+}
+
+th {
+    background-color: #f18e04; /* Оранжевый */
+    color: #fff; /* Белый */
+}
+
+/* Модальное окно */
+.modal-header {
+    background-color: #f18e04; /* Оранжевый */
+    color: #fff; /* Белый */
+}

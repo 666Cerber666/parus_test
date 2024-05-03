@@ -3,271 +3,192 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Inventory Management</title>
+    <title>Складской менеджер</title>
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}"> <!-- Подключение внешнего CSS-файла -->
     <!-- Скрипт jQuery -->
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <!-- Скрипт Bootstrap JavaScript -->
     <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
 </head>
 <body>
     <div class="container">
-        <h1>Inventory Management</h1>
-        <button type="button" class="btn btn-primary mb-3" data-toggle="modal" data-target="#addProductModal">Add Product</button>
-        <button type="button" class="btn btn-primary mb-3" data-toggle="modal" data-target="#addLocationModal">Add Location</button>
+        <h1 class="mt-5 mb-4">Складской менеджер</h1>
+        <div class="row mb-3">
+            <div class="col">
+                <form id="searchForm">
+                    <div class="input-group">
+                        <input type="text" class="form-control" id="searchInput" name="searchInput" placeholder="Поиск по наименованию товара">
+                    </div>
+                </form>
+            </div>
+            <div class="col-auto">
+                <button type="button" class="btn btn-primary mr-2" data-toggle="modal" data-target="#addProductModal">Добавить продукт</button>
+                <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#addLocationModal">Добавить склад</button>
+            </div>
+        </div>
+           
         <table class="table">
             <thead>
                 <tr>
-                    <th>Name</th>
-                    <th>Description</th>
-                    <th>Price</th>
-                    <th>Location</th>
-                    <th>Quantity</th>
-                    <th>Action</th>
+                    <th data-sort-by="name">
+                        <div class="d-flex align-items-center justify-content-between">
+                            <span>Наименование</span>
+                            <button type="button" class="btn btn-link sort-btn sort-by-name" data-sort-by="name" data-sort-order="asc">
+                                <i class="fas fa-sort"></i>
+                            </button>
+                        </div>
+                    </th>
+                    <th data-sort-by="description">
+                        <div class="d-flex align-items-center justify-content-center">
+                            <span>Описание</span>
+                            <button type="button" class="btn btn-link sort-btn sort-by-description" data-sort-by="description" data-sort-order="asc">
+                                <i class="fas fa-sort"></i>
+                            </button>
+                        </div>
+                    </th>
+                    <th data-sort-by="price">
+                        <div class="d-flex align-items-center justify-content-between">
+                            <span>Цена</span>
+                            <button type="button" class="btn btn-link sort-btn sort-by-price" data-sort-by="price" data-sort-order="asc">
+                                <i class="fas fa-sort"></i>
+                            </button>
+                        </div>
+                    </th>
+                    <th>
+                        <div class="d-flex align-items-center justify-content-between">
+                            <select class="form-control sort-by-location" id="locationFilter" style="min-width: 150px;">
+                                <option value="">Все склады</option>
+                                {% for location in locations %}
+                                <option value="{{ location.id }}">{{ location.name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </th>
+                    <th data-sort-by="quantity">
+                        <div class="d-flex align-items-center justify-content-between">
+                            <span>Количество</span>
+                            <button type="button" class="btn btn-link sort-btn sort-by-quantity" data-sort-by="quantity" data-sort-order="asc">
+                                <i class="fas fa-sort"></i>
+                            </button>
+                        </div>
+                    </th>
+                    <th>Действия</th>
                 </tr>
-            </thead>
+            </thead>                           
             <tbody>
                 {% for item in inventory %}
                 {% set product = item.product %}
                 <tr>
-                    <td>{{ item.name }}</td>
+                    <td class="name">{{ item.name }}</td>
                     <td>{{ item.description }}</td>
-                    <td>{{ item.price }}</td>
-                    <td>{{ item.location }}</td>
-                    <td>{{ item.quantity }}</td>
+                    <td class="price">{{ item.price }}</td>
+                    <td class="location">{{ item.location }}</td>
+                    <td class="quantity">
+                        <form id="updateQuantityForm">
+                            <input type="hidden" class="productId" value="{{ item.product_id }}">
+                            <input type="hidden" class="locationId" value="{{ item.location_id }}">
+                            <input type="number" class="form-control" value="{{ item.quantity }}" data-product="{{ item.id }}" data-location="{{ item.location_id }}">
+                        </form>
+                    </td>
                     <td>
-                        <button class="btn btn-primary" data-toggle="modal" data-target="#addProductModal">Add to Inventory</button>
-                        <button class="btn btn-danger" data-toggle="modal" data-target="#updateQuantityModal">Remove from Inventory</button>
+                        <button class="btn btn-primary" data-toggle="modal" data-target="#addProductModal">Добавить на склад</button>
+                        <button class="btn btn-danger mt-2 remove-from-inventory" data-toggle="modal" data-target="#deleteConfirmProductModal" data-product-id="{{ item.product_id }}">Удалить со склада</button>
                     </td>
                 </tr>
                 {% endfor %}
             </tbody>
-        </table>
+        </table>        
     </div>
     
     <!-- Модальное окно для добавления товара -->
-<div class="modal fade" id="addProductModal" tabindex="-1" role="dialog" aria-labelledby="addProductModalLabel" aria-hidden="true">
-    <div class="modal-dialog" role="document">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="addProductModalLabel">Add Product</h5>
-                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                    <span aria-hidden="true">&times;</span>
-                </button>
-            </div>
-            <div class="modal-body">
-                <!-- Форма для добавления товара -->
-                <form id="addProductForm">
-                    <div class="form-group">
-                        <label for="productName">Name</label>
-                        <input type="text" class="form-control" id="productName" name="productName">
-                    </div>
-                    <div class="form-group">
-                        <label for="productDescription">Description</label>
-                        <textarea class="form-control" id="productDescription" name="productDescription"></textarea>
-                    </div>
-                    <div class="form-group">
-                        <label for="productPrice">Price</label>
-                        <input type="text" class="form-control" id="productPrice" name="productPrice">
-                    </div>
-                    <div class="form-group">
-                        <label for="productLocation">Location</label>
-                        <select class="form-control" id="productLocation" name="productLocation">
-                            {% for location in locations %}
-                            <option value="{{ location.id }}">{{ location.name }}</option>
-                            {% endfor %}
-                        </select>
-                    </div>
-                    <button type="submit" class="btn btn-primary">Add Product</button>
-                </form>
+    <div class="modal fade" id="addProductModal" tabindex="-1" role="dialog" aria-labelledby="addProductModalLabel" aria-hidden="true">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="addProductModalLabel">Добавить продукт</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <!-- Форма для добавления товара -->
+                    <form id="addProductForm">
+                        <div class="form-group">
+                            <label for="productName">Наименование</label>
+                            <input type="text" class="form-control" id="productName" name="productName">
+                        </div>
+                        <div class="form-group">
+                            <label for="productDescription">Описание</label>
+                            <textarea class="form-control" id="productDescription" name="productDescription"></textarea>
+                        </div>
+                        <div class="form-group">
+                            <label for="productPrice">Цена</label>
+                            <input type="number" class="form-control" id="productPrice" name="productPrice">
+                        </div>
+                        <div class="form-group">
+                            <label for="productLocation">Склад</label>
+                            <select class="form-control" id="productLocation" name="productLocation">
+                                {% for location in locations %}
+                                <option value="{{ location.id }}">{{ location.name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <button type="submit" class="btn btn-primary">Добавить продукт</button>
+                    </form>
+                </div>
             </div>
         </div>
     </div>
-</div>
 
-<!-- Модальное окно для изменения количества товара -->
-<div class="modal fade" id="updateQuantityModal" tabindex="-1" role="dialog" aria-labelledby="updateQuantityModalLabel" aria-hidden="true">
-    <div class="modal-dialog" role="document">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="updateQuantityModalLabel">Update Quantity</h5>
-                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                    <span aria-hidden="true">&times;</span>
-                </button>
-            </div>
-            <div class="modal-body">
-                <!-- Форма для изменения количества товара -->
-                <form id="updateQuantityForm">
-                    <div class="form-group">
-                        <label for="newQuantity">New Quantity</label>
-                        <input type="number" class="form-control" id="newQuantity" name="newQuantity">
+    <!-- Модальное окно для подтверждения удаления товара -->
+        <div class="modal fade" id="confirmDeleteModal" tabindex="-1" role="dialog" aria-labelledby="confirmDeleteModalLabel" aria-hidden="true">
+            <div class="modal-dialog" role="document">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="confirmDeleteModalLabel">Подтвердить удаление</h5>
+                        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                            <span aria-hidden="true">&times;</span>
+                        </button>
                     </div>
-                    <div class="form-group">
-                        <label for="updateLocation">Location</label>
-                        <select class="form-control" id="updateLocation" name="updateLocation">
-                            {% for location in locations %}
-                            <option value="{{ location.id }}">{{ location.name }}</option>
-                            {% endfor %}
-                        </select>
+                    <div class="modal-body">
+                        Вы точно желаете удалить продукт со склада?
                     </div>
-                    <button type="submit" class="btn btn-primary">Update Quantity</button>
-                </form>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-dismiss="modal">Отмена</button>
+                        <button type="button" class="btn btn-danger" id="confirmDeleteBtn">Удалить</button>
+                    </div>
+                </div>
             </div>
         </div>
-    </div>
-</div>
 
-<!-- Модальное окно для добавления локации -->
-<div class="modal fade" id="addLocationModal" tabindex="-1" role="dialog" aria-labelledby="addLocationModalLabel" aria-hidden="true">
-    <div class="modal-dialog" role="document">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="addLocationModalLabel">Add Location</h5>
-                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                    <span aria-hidden="true">&times;</span>
-                </button>
-            </div>
-            <div class="modal-body">
-                <!-- Форма для добавления локации -->
-                <form id="addLocationForm">
-                    <div class="form-group">
-                        <label for="locationName">Location Name</label>
-                        <input type="text" class="form-control" id="locationName" name="locationName">
-                    </div>
-                    <!-- Другие поля для описания локации могут быть добавлены здесь -->
-                    <button type="submit" class="btn btn-primary">Add Location</button>
-                </form>
+    <!-- Модальное окно для добавления локации -->
+    <div class="modal fade" id="addLocationModal" tabindex="-1" role="dialog" aria-labelledby="addLocationModalLabel" aria-hidden="true">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="addLocationModalLabel">Добавить склад</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <!-- Форма для добавления локации -->
+                    <form id="addLocationForm">
+                        <div class="form-group">
+                            <label for="locationName">Склад</label>
+                            <input type="text" class="form-control" id="locationName" name="locationName">
+                        </div>
+                        <!-- Другие поля для описания локации могут быть добавлены здесь -->
+                        <button type="submit" class="btn btn-primary">Добавить склад</button>
+                    </form>
+                </div>
             </div>
         </div>
     </div>
-</div>
 
 </body>
 </html>
 
-<script>
-    document.addEventListener("DOMContentLoaded", function() {
-        console.log("Document loaded."); // Проверяем, что документ загружен
-
-        // Обработчик отправки формы для добавления товара
-        var addProductForm = document.getElementById('addProductForm');
-        console.log("Add product form:", addProductForm); // Проверяем, найден ли элемент формы
-        if (addProductForm) {
-            addProductForm.addEventListener('submit', function(event) {
-                event.preventDefault(); // Предотвращаем отправку формы по умолчанию
-                var formData = new FormData(this);
-                fetch('/add_product', {
-                    method: 'POST',
-                    body: formData
-                })
-                .then(response => {
-                    if (response.ok) {
-                        console.log('accept adding product');
-                        $('#addProductModal').modal('hide');
-                        updateInventoryTable();
-                    } else {
-                        console.error('Error adding product');
-                    }
-                })
-                .catch(error => {
-                    console.error('Error:', error);
-                });
-            });
-        } else {
-            console.error("Add product form not found.");
-        }
-
-        // Обработчик отправки формы для изменения количества товара
-        var updateQuantityForm = document.getElementById('updateQuantityForm');
-        console.log("Update quantity form:", updateQuantityForm); // Проверяем, найден ли элемент формы
-        if (updateQuantityForm) {
-            updateQuantityForm.addEventListener('submit', function(event) {
-                event.preventDefault(); // Предотвращаем отправку формы по умолчанию
-                var formData = new FormData(this);
-                fetch('/update_quantity', {
-                    method: 'POST',
-                    body: formData
-                })
-                .then(response => {
-                    if (response.ok) {
-                        console.log('Location added successfully');
-                        $('#addLocationModal').modal('hide');
-                        updateInventoryTable();
-                    } else {
-                        console.error('Error updating quantity');
-                    }
-                })
-                .catch(error => {
-                    console.error('Error:', error);
-                });
-            });
-        } else {
-            console.error("Update quantity form not found.");
-        };
-
-        console.log("Scripts loaded."); // Проверяем, что скрипты загружены
-
-        // Добавляем обработчик события на клик по кнопке "Add to Inventory"
-        var addBtn = document.querySelector('button[data-target="#addProductModal"]');
-
-        // Добавляем обработчик события на клик по кнопке "Remove from Inventory"
-        var removeBtn = document.querySelector('button[data-target="#updateQuantityModal"]');
-    });
-
-    // Обработчик отправки формы для добавления локации
-var addLocationForm = document.getElementById('addLocationForm');
-if (addLocationForm) {
-    addLocationForm.addEventListener('submit', function(event) {
-        event.preventDefault(); // Предотвращаем отправку формы по умолчанию
-        var formData = new FormData(this);
-        fetch('/add_location', {
-            method: 'POST',
-            body: formData
-        })
-        .then(response => {
-            if (response.ok) {
-                console.log('Location added successfully');
-                $('#addLocationModal').modal('hide');
-                updateInventoryTable();
-            } else {
-                console.error('Error adding location');
-            }
-        })
-        .catch(error => {
-            console.error('Error:', error);
-        });
-    });
-} else {
-    console.error("Add location form not found.");
-}
-
-// Функция для обновления данных таблицы
-function updateInventoryTable() {
-    fetch('/')
-    .then(response => {
-        if (response.ok) {
-            return response.text();
-        } else {
-            throw new Error('Failed to update inventory table');
-        }
-    })
-    .then(data => {
-        // Создаем временный элемент для парсинга HTML
-        var tempElement = document.createElement('div');
-        tempElement.innerHTML = data;
-
-        // Находим только tbody элемент
-        var newTbody = tempElement.querySelector('tbody');
-
-        // Заменяем содержимое tbody новыми данными
-        var currentTbody = document.querySelector('tbody');
-        currentTbody.innerHTML = newTbody.innerHTML;
-    })
-    .catch(error => {
-        console.error('Error updating inventory table:', error);
-    });
-}
-
-</script>
-
-
+<script src="{{ url_for('static', filename='inventory_management.js') }}"></script>
